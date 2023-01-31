@@ -23,6 +23,6 @@ const projectSchema = new mongoose.Schema({
         type : Boolean,
     },
 });
-const My_Projects = new mongoose.model('My_Projects', projectSchema);
+const My_Projects = new mongoose.model('my_projects', projectSchema);
 
 module.exports = My_Projects;
