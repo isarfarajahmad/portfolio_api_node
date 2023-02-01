@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 // Connecting Database
 require('../db/conn');
@@ -10,43 +9,22 @@ require('../db/conn');
 const MyProjects = require('../model/my_models');
 const User = require('../model/user_model');
 
-router.get("/", (req, res) => {
-    res.send("Hello World from Router");
-});
 
 const middleware = (req, res, next) => {
     console.log("Middleware is available ... ");
     next();
 }
 
+router.get('/', (req, res) => {
+    res.send("This is just a homepage")
+})
+
 router.get('/login', (req, res) => {
     res.send("Login Page");
 })
 
-// router.post('/register', (req, res) => {
-//     const { fullname, email, phone, password, cpassword} = req.body;
-
-//     if(!fullname || !email || !phone || !password || !cpassword) {
-//         return res.status(422).json({error: "Please fill all the required details !"})
-//     }
-
-//     User.findOne({email : email})
-//     .then((userExist) => {
-//             if (userExist) {
-//                 return res.status(422).json({error: "User already exist !"})
-//             }
-//                 const user = new User({fullname, email, phone, password, cpassword});
-
-//                 user.save().then(() => {
-//                     res.status(201).json({message: "User Successfully Registered !"})
-//                 }).catch((err) => {
-//                     res.status(500).json({error: "User Registration Failed !"})
-//                 })
-//         }).catch((err) => {console.log(err);});
-// })
-
 router.post('/register', async (req, res) => {
-    const { fullname, email, phone, password, cpassword} = req.body;
+    const { fullname, email, password, cpassword} = req.body;
 
     if(!fullname || !email || !password || !cpassword) {
         return res.status(422).json({error: "Please fill all the required details !"})
@@ -100,11 +78,6 @@ router.post('/login', async (req, res) => {
         } else {
             res.status(422).json({error : "Invalid Credentials !"})
         }
-
-        
-
-        
-
     } catch (err) {
         console.log(err);
     }
@@ -113,7 +86,6 @@ router.post('/login', async (req, res) => {
 router.post('/add_projects', async (req, res) => {
     try {
         const addingProjects = new MyProjects(req.body);
-        console.log(req.body);
         const insertProjects = await addingProjects.save();
         res.status(201).send(insertProjects);
     } catch (e) {
