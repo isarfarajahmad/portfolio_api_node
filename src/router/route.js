@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 // Connecting Database
 require('../db/conn');
@@ -8,13 +10,12 @@ require('../db/conn');
 // Using Projects Model
 const MyProjects = require('../model/my_models');
 const User = require('../model/user_model');
+const auth = require('../middleware/auth');
 
-
-const middleware = (req, res, next) => {
-    console.log("Middleware is available ... ");
-    next();
-}
-
+router.get('/secret', auth, (req, res) => {
+    // console.log(`We have got the cookie ${req.cookies.jwtoken}`);
+    res.send("secret")
+})
 router.get('/', (req, res) => {
     res.send("This is just a homepage")
 })
@@ -83,7 +84,7 @@ router.post('/login', async (req, res) => {
     }
 })
 
-router.post('/add_projects', async (req, res) => {
+router.post('/add_projects', auth, async (req, res) => {
     try {
         const addingProjects = new MyProjects(req.body);
         const insertProjects = await addingProjects.save();
@@ -93,7 +94,7 @@ router.post('/add_projects', async (req, res) => {
     }
 })
 
-router.get('/projects', middleware, async(req, res) => {
+router.get('/projects', async(req, res) => {
     try {
         const getProjects = await MyProjects.find({});
         res.cookie('token', 'sarfaraj');
@@ -114,7 +115,7 @@ router.get('/project/:id', async(req, res) => {
     }
 });
 
-router.patch('/projects/:id', async(req, res) => {
+router.patch('/projects/:id', auth, async(req, res) => {
     try {
         const _id = req.params.id;
         const updateProject = await MyProjects.findByIdAndUpdate(_id, req.body, {
@@ -127,7 +128,7 @@ router.patch('/projects/:id', async(req, res) => {
     }
 });
 
-router.delete('/projects/:id', async(req, res) => {
+router.delete('/projects/:id', auth, async(req, res) => {
     try {
         const getProject = await MyProjects.findByIdAndDelete(req.params.id);
         res.send(getProject);
