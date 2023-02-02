@@ -44,6 +44,31 @@ router.post('/add_projects', auth, (req, res) => {
     }
 })
 
+router.patch('/projects/:id', auth, async(req, res) => {
+    try {
+        const _id = req.params.id;
+        if (req.files){
+            const file = req.files.thumbnail;
+            cloudinary.uploader.upload(file.tempFilePath, {folder:'portfolio'}, async (err, result) => {
+            const updateProject = await MyProjects.findByIdAndUpdate(_id, {
+                headline:req.body.headline,
+                subheadline:req.body.subheadline,
+                thumbnail:result.url,
+                description:req.body.description,
+                active:req.body.active,
+                featured:req.body.featured,
+            }, {new : true});
+            res.send(updateProject);
+            })
+        } else {
+            const updateProject = await MyProjects.findByIdAndUpdate(_id, req.body, {new:true});
+            res.send(updateProject);
+        }
+    } catch (e) {
+        res.status(500).send(e);
+        console.log(e);
+    }
+});
 
 router.get('/secret', auth, (req, res) => {
     // console.log(`We have got the cookie ${req.cookies.jwtoken}`);
@@ -141,7 +166,6 @@ router.post('/login', async (req, res) => {
 router.get('/projects', async(req, res) => {
     try {
         const getProjects = await MyProjects.find({});
-        res.cookie('token', 'sarfaraj');
         res.status(201).send(getProjects);
     } catch (e) {
         res.status(400).send(e);
@@ -159,18 +183,6 @@ router.get('/project/:id', async(req, res) => {
     }
 });
 
-router.patch('/projects/:id', auth, async(req, res) => {
-    try {
-        const _id = req.params.id;
-        const updateProject = await MyProjects.findByIdAndUpdate(_id, req.body, {
-            new : true
-        });
-        res.send(updateProject);
-    } catch (e) {
-        res.status(500).send(e);
-        console.log(e);
-    }
-});
 
 router.delete('/projects/:id', auth, async(req, res) => {
     try {
