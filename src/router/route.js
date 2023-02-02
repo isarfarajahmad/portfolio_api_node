@@ -1,16 +1,49 @@
+// const dotenv = require('dotenv');
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const cloudinary = require('cloudinary').v2;
 
 // Connecting Database
 require('../db/conn');
+// dotenv.config({ path: '../config.env'});
+
+cloudinary.config({ 
+    cloud_name: process.env.CLOUD_NAME, 
+    api_key: process.env.API_KEY,
+    api_secret: process.env.API_SECRET,
+    secure: true
+  });
 
 // Using Projects Model
-const MyProjects = require('../model/my_models');
+const MyProjects = require('../model/project_model');
 const User = require('../model/user_model');
 const auth = require('../middleware/auth');
+
+router.post('/add_projects', auth, (req, res) => {
+    try {
+        const file = req.files.thumbnail;
+        cloudinary.uploader.upload(file.tempFilePath, {folder: 'portfolio'}, async (err, result) =>{
+            console.log("Image Uploaded Successfully");
+            const addingProjects = new MyProjects({
+                headline:req.body.headline,
+                subheadline:req.body.subheadline,
+                thumbnail:result.url,
+                description:req.body.description,
+                active:req.body.active,
+                featured:req.body.featured,
+            });
+            const insertProjects = await addingProjects.save();
+            res.status(201).send(insertProjects);
+        });
+        
+    } catch (e) {
+        res.status(400).send(e);
+    }
+})
+
 
 router.get('/secret', auth, (req, res) => {
     // console.log(`We have got the cookie ${req.cookies.jwtoken}`);
@@ -20,8 +53,28 @@ router.get('/', (req, res) => {
     res.send("This is just a homepage")
 })
 
-router.get('/login', (req, res) => {
-    res.send("Login Page");
+router.get('/logout_all', auth, async (req, res) => {
+    try {
+        req.user.tokens = [];
+        res.clearCookie('jwtoken')
+        await req.user.save();
+        res.send({message: "You are logged out !"})
+    } catch (err) {
+        res.status(500).send(err);
+    }
+})
+
+router.get('/logout', auth, async (req, res) => {
+    try {
+        req.user.tokens = req.user.tokens.filter((current_token) => {
+            return current_token.token != req.token;
+        })
+        res.clearCookie('jwtoken')
+        await req.user.save();
+        res.send({message: "You are logged out !"})
+    } catch (err) {
+        res.status(500).send(err);
+    }
 })
 
 router.post('/register', async (req, res) => {
@@ -84,15 +137,6 @@ router.post('/login', async (req, res) => {
     }
 })
 
-router.post('/add_projects', auth, async (req, res) => {
-    try {
-        const addingProjects = new MyProjects(req.body);
-        const insertProjects = await addingProjects.save();
-        res.status(201).send(insertProjects);
-    } catch (e) {
-        res.status(400).send(e);
-    }
-})
 
 router.get('/projects', async(req, res) => {
     try {
